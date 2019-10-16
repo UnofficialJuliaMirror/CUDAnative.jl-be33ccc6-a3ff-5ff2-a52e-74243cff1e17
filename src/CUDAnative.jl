@@ -110,6 +110,16 @@ let
     ## optional
     global const nvdisasm = find_cuda_binary("nvdisasm", toolkit_dirs)
     global const ptxas = find_cuda_binary("ptxas", toolkit_dirs)
+
+
+    # extras
+
+    toolkit_extras_dirs = filter(dir->isdir(joinpath(dir, "extras")), toolkit_dirs)
+    isempty(toolkit_extras_dirs) && error("Available CUDA toolchain does not contain 'extras' directory")
+
+    cupti_dirs = map(dir->joinpath(dir, "CUPTI"), toolkit_extras_dirs)
+    global const libcupti = find_cuda_library("cupti", cupti_dirs)
+    global const libnvperf = find_cuda_library("nvperf_host", cupti_dirs)
 end
 
 
@@ -124,6 +134,9 @@ include(joinpath("device", "array.jl"))
 include(joinpath("device", "cuda.jl"))
 include(joinpath("device", "llvm.jl"))
 include(joinpath("device", "runtime.jl"))
+
+include("cupti/CUPTI.jl")
+include("nvperf/NVPerf.jl")
 
 include("init.jl")
 
