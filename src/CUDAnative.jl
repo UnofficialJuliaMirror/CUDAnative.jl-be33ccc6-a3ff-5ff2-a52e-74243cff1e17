@@ -110,6 +110,7 @@ let
     ## optional
     global const nvdisasm = find_cuda_binary("nvdisasm", toolkit_dirs)
     global const ptxas = find_cuda_binary("ptxas", toolkit_dirs)
+    global const libnvtx = find_cuda_library("nvtx", toolkit_dirs)
 
 
     # extras
@@ -137,6 +138,7 @@ include(joinpath("device", "runtime.jl"))
 
 include("cupti/CUPTI.jl")
 include("nvperf/NVPerf.jl")
+include("nvtx/NVTX.jl")
 
 include("init.jl")
 
