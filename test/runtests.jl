@@ -50,7 +50,7 @@ if length(devices()) > 0
 
     # pick most recent device (based on compute capability)
     dev = last(sort(collect(devices()); by=capability))
-    @info("Testing using device $(name(dev))")
+    @info("Testing using device $(name(dev)) on CUDA driver $(CUDAdrv.version()) and toolkit $(CUDAnative.version())")
     device!(dev)
 end
 cap = CUDAnative.current_capability()

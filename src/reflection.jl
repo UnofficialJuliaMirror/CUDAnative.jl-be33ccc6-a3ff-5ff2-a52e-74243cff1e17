@@ -111,9 +111,9 @@ function code_sass(io::IO, job::CompilerJob)
     # NOTE: this might not match what is being executed, due to the PTX->SASS conversion
     #       by the driver possibly not matching what `ptxas` (part of the toolkit) does.
     # TODO: see how `nvvp` extracts SASS code when doing PC sampling, and copy that.
-    Base.run(`$(ptxas[]) --gpu-name $gpu --output-file $fn --input-as-string $ptx`)
+    Base.run(`$(ptxas) --gpu-name $gpu --output-file $fn --input-as-string $ptx`)
     try
-        cmd = `$(nvdisasm[]) --print-code --print-line-info $fn`
+        cmd = `$(nvdisasm) --print-code --print-line-info $fn`
         for line in readlines(cmd)
             # nvdisasm output is pretty verbose;
             # perform some clean-up and make it look like @code_native

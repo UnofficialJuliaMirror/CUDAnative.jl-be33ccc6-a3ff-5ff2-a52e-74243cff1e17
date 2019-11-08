@@ -19,11 +19,18 @@ using Libdl
 const target_support = Ref{Vector{VersionNumber}}()
 const ptx_support = Ref{Vector{VersionNumber}}()
 
-# paths
-const libdevice = Ref{Union{String,Dict{VersionNumber,String}}}()
-const libcudadevrt = Ref{String}()
-const nvdisasm = Ref{String}()
-const ptxas = Ref{String}()
+const depsfile = joinpath(dirname(dirname(@__FILE__)), "deps", "deps.jl")
+if isfile(depsfile)
+    include(depsfile)
+else
+    error("CUDAnative is not properly installed. Please run Pkg.build(\"CUDAnative\")")
+end
+
+function version()::VersionNumber
+    isa(cuda_toolkit_version, VersionNumber) ? cuda_toolkit_version :
+    cuda_toolkit_version[] !== nothing       ? cuda_toolkit_version[] :
+    error("You should only call this function if CUDAnative.jl has successfully initialized")
+end
 
 
 ## source code includes
@@ -64,7 +71,77 @@ function __init__()
         return
     end
 
+    buildlog = joinpath(dirname(@__DIR__), "deps", "build.log")
     try
+        if !precompiling
+            if !use_binarybuilder
+                @warn """Automatic installation of CUDA failed; see $buildlog for more details.
+                         You will need to install the toolkit yourself and make sure it is discoverable.
+                         Refer to the documentation for more instructions."""
+            end
+        end
+
+
+        ## delayed detection
+
+        # if we're not using BinaryBuilder, we can't be sure of everything at build-time
+
+        if isa(cuda_toolkit_version, Ref)
+            # parse the ptxas version string
+            verstr = withenv("LANG"=>"C") do
+                read(`$ptxas --version`, String)
+            end
+            m = match(r"\brelease (?<major>\d+).(?<minor>\d+)\b", verstr)
+            m !== nothing || error("could not parse CUDA version info (\"$verstr\")")
+
+            cuda_toolkit_version[] = VersionNumber(parse(Int, m[:major]), parse(Int, m[:minor]))
+        end
+
+        if isa(libcudadevrt, Ref)
+            path = if haskey(ENV, "JULIA_CUDA_DEVICERT")
+                ENV["JULIA_CUDA_DEVICERT"]
+            else
+                paths = [
+                    "/usr/lib/x86_64-linux-gnu/libcudadevrt.a",
+                    "/usr/local/cuda/targets/x86_64-linux/lib/libcudadevrt.a",
+                    "/opt/cuda/targets/x86_64-linux/lib/libcudadevrt.a",
+                    "/usr/local/cuda/targets/aarch64-linux/lib/libcudadevrt.a",
+                    "opt/cuda/targets/aarch64-linux/lib/libcudadevrt.a",
+                    "/usr/local/cuda/targets/x86_64-linux/lib/libcudadevrt.a",
+                    "/opt/cuda/targets/x86_64-linux/lib/libcudadevrt.a",
+                ]
+                index = findfirst(isfile, paths)
+                index === nothing ? nothing : paths[index]
+            end
+            if path === nothing || !isfile(path)
+                error("Could not find the CUDA device runtime (libcudadevrt). Please specify using the JULIA_CUDA_DEVICERT environment variable.")
+            end
+
+            libcudadevrt[] = path
+        end
+
+        if isa(libdevice, Ref)
+            path = if haskey(ENV, "JULIA_CUDA_LIBDEVICE")
+                ENV["JULIA_CUDA_LIBDEVICE"]
+            else
+                paths = [
+                    "/usr/lib/nvidia-cuda-toolkit/libdevice/libdevice.10.bc",
+                    "/usr/local/cuda/nvvm/libdevice/libdevice.10.bc",
+                    "/opt/cuda/nvvm/libdevice/libdevice.10.bc",
+                ]
+                index = findfirst(isfile, paths)
+                index === nothing ? nothing : paths[index]
+            end
+            if path === nothing || !isfile(path)
+                error("Could not find the CUDA device library (libdevice). Please specify using the JULIA_CUDA_LIBDEVICE environment variable.")
+            end
+
+            libdevice[] = path
+        end
+
+        check_deps()
+
+
         ## target support
 
         # LLVM.jl
@@ -83,13 +160,11 @@ function __init__()
 
         # CUDA
 
-        toolkit_dirs = find_toolkit()
-        cuda_toolkit_version = find_toolkit_version(toolkit_dirs)
-        if cuda_toolkit_version <= v"9"
-            @warn "CUDAnative.jl only supports CUDA 9.0 or higher (your toolkit provides CUDA $(cuda_toolkit_version))"
+        if version() < v"9"
+            @warn "CUDAnative.jl only supports CUDA 9.0 or higher (your toolkit provides CUDA $(version()))"
         end
 
-        cuda_targets, cuda_isas = cuda_support(CUDAdrv.version(), cuda_toolkit_version)
+        cuda_targets, cuda_isas = cuda_support(CUDAdrv.version(), version())
 
         target_support[] = sort(collect(llvm_targets ∩ cuda_targets))
         isempty(target_support[]) && error("Your toolchain does not support any device target")
@@ -99,24 +174,12 @@ function __init__()
 
         @debug("CUDAnative supports devices $(verlist(target_support[])); PTX $(verlist(ptx_support[]))")
 
-        let val = find_libdevice(target_support[], toolkit_dirs)
-            val === nothing && error("Your CUDA installation does not provide libdevice")
-            libdevice[] = val
-        end
+        if !precompiling
+            if version() != CUDAdrv.version()
+                @warn """You are using CUDA toolkit $(version()) using a driver for $(CUDAdrv.version()).
+                         Please rebuild CUDAnative.jl using Pkg.build(\"CUDAnative\") and/or upgrade your driver to fix this issue."""
 
-        let val = find_libcudadevrt(toolkit_dirs)
-            val === nothing && error("Your CUDA installation does not provide libcudadevrt")
-            libcudadevrt[] = val
-        end
-
-        let val = find_cuda_binary("nvdisasm", toolkit_dirs)
-            val === nothing && error("Your CUDA installation does not provide the nvdisasm binary")
-            nvdisasm[] = val
-        end
-
-        let val = find_cuda_binary("ptxas", toolkit_dirs)
-            val === nothing && error("Your CUDA installation does not provide the ptxas binary")
-            ptxas[] = val
+            end
         end
 
 
@@ -133,7 +196,7 @@ function __init__()
             if verbose
                 @error "CUDAnative.jl failed to initialize" exception=(ex, catch_backtrace())
             else
-                @info "CUDAnative.jl failed to initialized, GPU functionality unavailable (set JULIA_CUDA_SILENT or JULIA_CUDA_VERBOSE to silence or expand this message)"
+                @info "CUDAnative.jl failed to initialize, GPU functionality unavailable (set JULIA_CUDA_SILENT or JULIA_CUDA_VERBOSE to silence or expand this message)"
             end
         end
     end

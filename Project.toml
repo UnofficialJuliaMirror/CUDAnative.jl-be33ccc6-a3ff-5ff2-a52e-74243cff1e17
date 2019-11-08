@@ -4,6 +4,7 @@ version = "2.5.5"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+BinaryProvider = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
 CEnum = "fa961155-64e5-5f13-b03f-caf6b980ea82"
 CUDAapi = "3895d2a7-ec45-59b8-82bb-cfc6a382f9b3"
 CUDAdrv = "c5f51814-7f29-56b8-a69c-e4d8f6be1fde"
@@ -16,6 +17,7 @@ TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
 Adapt = "0.4, 1.0"
+BinaryProvider = "0.3, 0.4, 0.5"
 CEnum = "0.2"
 CUDAapi = "2.0"
 CUDAdrv = "4.0.1"

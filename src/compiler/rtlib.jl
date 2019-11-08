@@ -36,16 +36,7 @@ const libcache = Dict{String, LLVM.Module}()
 #
 
 function get_libdevice(cap)
-    if isa(libdevice[], Dict)
-        # select the most recent & compatible library
-        vers = keys(libdevice[])
-        compat_vers = Set(ver for ver in vers if ver <= cap)
-        isempty(compat_vers) && error("No compatible CUDA device library available")
-        ver = maximum(compat_vers)
-        path = libdevice[][ver]
-    else
-        libdevice[]
-    end
+    isa(libdevice, Ref) ? libdevice[] : libdevice
 end
 
 function load_libdevice(cap)

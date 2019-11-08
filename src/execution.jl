@@ -423,7 +423,8 @@ when function changes, or when different types or keyword arguments are provided
             if !isempty(setdiff(undefined_fns, intrinsic_fns))
                 @timeit to[] "device runtime library" begin
                     linker = CUDAdrv.CuLink(jit_options)
-                    CUDAdrv.add_file!(linker, libcudadevrt[], CUDAdrv.JIT_INPUT_LIBRARY)
+                    path = isa(libcudadevrt, Ref) ? libcudadevrt[] : libcudadevrt
+                    CUDAdrv.add_file!(linker, path, CUDAdrv.JIT_INPUT_LIBRARY)
                     CUDAdrv.add_data!(linker, kernel_fn, asm)
                     image = CUDAdrv.complete(linker)
                 end
