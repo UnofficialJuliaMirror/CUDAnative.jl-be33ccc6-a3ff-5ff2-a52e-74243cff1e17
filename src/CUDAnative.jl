@@ -73,18 +73,15 @@ function __init__()
 
     buildlog = joinpath(dirname(@__DIR__), "deps", "build.log")
     try
-        if !precompiling
-            if !use_binarybuilder
-                @warn """Automatic installation of CUDA failed; see $buildlog for more details.
-                         You will need to install the toolkit yourself and make sure it is discoverable.
-                         Refer to the documentation for more instructions."""
-            end
-        end
-
-
         ## delayed detection
 
         # if we're not using BinaryBuilder, we can't be sure of everything at build-time
+        if !precompiling
+            if !use_binarybuilder
+                @warn """Automatic installation of the CUDA toolkit failed; see $buildlog for more details
+                         or call Pkg.build("CUDAnative") to try again. Otherwise, you will need to install CUDA and make sure it is discoverable."""
+            end
+        end
 
         if isa(cuda_toolkit_version, Ref)
             # parse the ptxas version string
@@ -141,6 +138,20 @@ function __init__()
 
         check_deps()
 
+        if !precompiling
+            if version() < v"9"
+                @warn "CUDAnative.jl only supports CUDA 9.0 or higher (your toolkit provides CUDA $(version()))"
+            elseif version() > CUDAdrv.version()
+                if use_binarybuilder
+                    @warn """You are using CUDA toolkit $(version()) with a driver that only supports up to $(CUDAdrv.version()).
+                             Rebuilding CUDAnative might fix this, try Pkg.build(\"CUDAnative\")."""
+                else
+                    @warn """You are using CUDA toolkit $(version()) with a driver that only supports up to $(CUDAdrv.version()).
+                             It is recommended to upgrade your driver, or switch to automatic installation of CUDA."""
+                end
+            end
+        end
+
 
         ## target support
 
@@ -160,10 +171,6 @@ function __init__()
 
         # CUDA
 
-        if version() < v"9"
-            @warn "CUDAnative.jl only supports CUDA 9.0 or higher (your toolkit provides CUDA $(version()))"
-        end
-
         cuda_targets, cuda_isas = cuda_support(CUDAdrv.version(), version())
 
         target_support[] = sort(collect(llvm_targets ∩ cuda_targets))
@@ -173,14 +180,6 @@ function __init__()
         isempty(ptx_support[]) && error("Your toolchain does not support any PTX ISA")
 
         @debug("CUDAnative supports devices $(verlist(target_support[])); PTX $(verlist(ptx_support[]))")
-
-        if !precompiling
-            if version() != CUDAdrv.version()
-                @warn """You are using CUDA toolkit $(version()) using a driver for $(CUDAdrv.version()).
-                         Please rebuild CUDAnative.jl using Pkg.build(\"CUDAnative\") and/or upgrade your driver to fix this issue."""
-
-            end
-        end
 
 
         ## actual initialization

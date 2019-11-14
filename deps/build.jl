@@ -48,22 +48,9 @@ const depsfile = joinpath(@__DIR__, "deps.jl")
 function main()
     rm(depsfile; force=true)
 
-    # CUDA version selection
-    cuda_version = if haskey(ENV, "JULIA_CUDA_VERSION")
-        # use the CUDA version as requested by the user
-        @warn "Overriding CUDA version to $(ENV["JULIA_CUDA_VERSION"])"
-        VersionNumber(ENV["JULIA_CUDA_VERSION"])
-    elseif CUDAdrv.functional()
-        # use a version of CUDA that matches the installed driver
-        @debug "Detected CUDA driver compatibility $(CUDAdrv.version())"
-        CUDAdrv.version()
-    else
-        nothing
-    end
-
     use_binarybuilder = parse(Bool, get(ENV, "JULIA_CUDA_USE_BINARYBUILDER", "true"))
-    if use_binarybuilder && cuda_version !== nothing
-        if try_binarybuilder(cuda_version)
+    if use_binarybuilder
+        if try_binarybuilder()
             @assert !unsatisfied()
             return
         end
@@ -77,14 +64,39 @@ end
 verlist(vers) = join(map(ver->"$(ver.major).$(ver.minor)", sort(collect(vers))), ", ", " and ")
 
 # download CUDA using BinaryBuilder
-function try_binarybuilder(cuda_version)
-    if haskey(resources, cuda_version)
-        download_info = resources[cuda_version]
+function try_binarybuilder()
+    @info "Trying to provide CUDA using BinaryBuilder"
+
+    # CUDA version selection
+    cuda_version = if haskey(ENV, "JULIA_CUDA_VERSION")
+        @warn "Overriding CUDA version to $(ENV["JULIA_CUDA_VERSION"])"
+        VersionNumber(ENV["JULIA_CUDA_VERSION"])
+    elseif CUDAdrv.functional()
+        driver_capability = CUDAdrv.version()
+        @info "Detected CUDA driver compatibility $(driver_capability)"
+
+        # CUDA drivers are backwards compatible
+        supported_versions = filter(ver->ver <= driver_capability, keys(resources))
+        if isempty(supported_versions)
+            @warn("""Unsupported version of CUDA; only $(verlist(keys(resources))) are available through BinaryBuilder.
+                     If your GPU and driver supports it, you can force a different version with the JULIA_CUDA_VERSION environment variable.""")
+            return false
+        end
+
+        # pick the most recent version
+        maximum(supported_versions)
     else
-        @warn("""Unsupported version of CUDA requested; only $(verlist(keys(resources))) are supported through BinaryBuilder.
-                If your GPU and driver supports it, you can force a different version with the JULIA_CUDA_VERSION environment variable.""")
+        @warn("""Could not query CUDA driver compatibility. Please fix your CUDA driver (make sure CUDAdrv.jl works).
+                 Alternatively, you can force a CUDA version with the JULIA_CUDA_VERSION environment variable.""")
         return false
     end
+    @info "Selected CUDA $cuda_version"
+
+    if !haskey(resources, cuda_version)
+        @warn("Requested CUDA version is not available through BinaryBuilder.")
+        return false
+    end
+    download_info = resources[cuda_version]
 
     # Install unsatisfied or updated dependencies:
     dl_info = choose_download(download_info, platform_key_abi())
@@ -117,7 +129,7 @@ end
 
 # assume that everything will be fine at run time
 function do_fallback()
-    @warn "Could not download CUDA; assuming it will be available at run time"
+    @warn "Could not download CUDA dependencies; assuming they will be available at run time"
 
     open(depsfile, "w") do io
         println(io, "const use_binarybuilder = false")
