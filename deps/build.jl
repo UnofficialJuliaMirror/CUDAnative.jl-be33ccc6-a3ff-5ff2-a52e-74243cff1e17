@@ -46,6 +46,8 @@ unsatisfied() = any(!satisfied(p; verbose=verbose) for p in products)
 const depsfile = joinpath(@__DIR__, "deps.jl")
 
 function main()
+    rm(depsfile; force=true)
+
     # CUDA version selection
     cuda_version = if haskey(ENV, "JULIA_CUDA_VERSION")
         # use the CUDA version as requested by the user
