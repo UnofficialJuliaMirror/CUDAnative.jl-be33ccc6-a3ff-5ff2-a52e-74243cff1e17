@@ -6,31 +6,31 @@ const verbose = "--verbose" in ARGS
 const prefix = Prefix(get([a for a in ARGS if a != "--verbose"], 1, joinpath(@__DIR__, "usr")))
 
 # online sources we can use
-const bin_prefix = "https://github.com/JuliaGPU/CUDABuilder/releases/download/v0.1.1"
+const bin_prefix = "https://github.com/JuliaGPU/CUDABuilder/releases/download/v0.1.3"
 const resources = Dict(
-    v"10.1" =>
+    v"9.0" =>
         Dict(
-            MacOS(:x86_64) => ("$bin_prefix/CUDA.v10.1.243.x86_64-apple-darwin14.tar.gz", "d8e2bad9bd1fcd93aef48e16edcdbe078c8517301946382e2348a12bfb2fbdd3"),
-            Linux(:x86_64, libc=:glibc) => ("$bin_prefix/CUDA.v10.1.243.x86_64-linux-gnu.tar.gz", "2b0abbf2d1b198663038c07f6cd25eda2f26c80ac8e4b6632ebbd8123a08e8c4"),
-            Windows(:x86_64) => ("$bin_prefix/CUDA.v10.1.243.x86_64-w64-mingw32.tar.gz", "13354a23a0f5f158ce2a79798e91741bf2fc84fc5e1ba682c220d5dfa247a663"),
-        ),
-    v"10.0" =>
-        Dict(
-            MacOS(:x86_64) => ("$bin_prefix/CUDA.v10.0.130.x86_64-apple-darwin14.tar.gz", "8e76201a82b1ddf695bf07b3d2bf66491992563f86da43242e29561c3406f6f0"),
-            Linux(:x86_64, libc=:glibc) => ("$bin_prefix/CUDA.v10.0.130.x86_64-linux-gnu.tar.gz", "605a2b5f1c8b840e4e0898725780010a5b5d8e776a44b1b19097866f0e29ed5e"),
-            Windows(:x86_64) => ("$bin_prefix/CUDA.v10.0.130.x86_64-w64-mingw32.tar.gz", "3989c6019128e7c814b36da30151390223f596c3e17779d932284ced9bcc8f6c"),
+            Linux(:x86_64, libc=:glibc) => ("$bin_prefix/CUDA.v9.0.176-0.1.3.x86_64-linux-gnu.tar.gz", "50c792a89d9b6168cd64b2ac655774a3a60300c15cb6fe09da7bb09f8d4a81cf"),
+            Windows(:x86_64) => ("$bin_prefix/CUDA.v9.0.176-0.1.3.x86_64-w64-mingw32.tar.gz", "a8ec851546f2d3398010b352ff7cddfdb21a17cde388c1596b9539d38bb11283"),
+            MacOS(:x86_64) => ("$bin_prefix/CUDA.v9.0.176-0.1.3.x86_64-apple-darwin14.tar.gz", "9aee98c2a286300b0e1705c7985379730f951ee408bf032a3b532c8ac0a8f369"),
         ),
     v"9.2" =>
         Dict(
-            MacOS(:x86_64) => ("$bin_prefix/CUDA.v9.2.148.x86_64-apple-darwin14.tar.gz", "19338ae2f97c7d840b49d5095230e03e429511c3750cbfb8c6482ce0570992d3"),
-            Linux(:x86_64, libc=:glibc) => ("$bin_prefix/CUDA.v9.2.148.x86_64-linux-gnu.tar.gz", "fff8cd027e95b62c552c0225c5daeb6d751b94d984be5c3ca849d61cfef6dd34"),
-            Windows(:x86_64) => ("$bin_prefix/CUDA.v9.2.148.x86_64-w64-mingw32.tar.gz", "0768b7293320ff8f4a4ae35d9ea4a02c43bdefcebc8209c94fdaff9010204de7"),
+            Linux(:x86_64, libc=:glibc) => ("$bin_prefix/CUDA.v9.2.148-0.1.3.x86_64-linux-gnu.tar.gz", "efd70834cb9d2966560cd29ab4fd385f275f83b8f2c2b12c2685e9f21b0c6c88"),
+            Windows(:x86_64) => ("$bin_prefix/CUDA.v9.2.148-0.1.3.x86_64-w64-mingw32.tar.gz", "0b375187c9173c2326c7118856143ef0feafd97702f4fc9dfe83037900ad3c58"),
+            MacOS(:x86_64) => ("$bin_prefix/CUDA.v9.2.148-0.1.3.x86_64-apple-darwin14.tar.gz", "1c374b679bab84065d09e66eebfa1d7ba207d92115550f534152618ac19b7204"),
         ),
-    v"9.0" =>
+    v"10.0" =>
         Dict(
-            MacOS(:x86_64) => ("$bin_prefix/CUDA.v9.0.176.x86_64-apple-darwin14.tar.gz", "d50e80e9fe58551a2092cec74b6a3fe680ad13ebf85a5f7bd6b184ef72ec1f18"),
-            Linux(:x86_64, libc=:glibc) => ("$bin_prefix/CUDA.v9.0.176.x86_64-linux-gnu.tar.gz", "120224f076be11846d7f22225ac8fa23eba82dc6356868d20814b89a8e795c8c"),
-            Windows(:x86_64) => ("$bin_prefix/CUDA.v9.0.176.x86_64-w64-mingw32.tar.gz", "5cf9ca0530e09b48a578d73fef08386b74b422fcddf15e0c7c6cfebc94f11fa0"),
+            Linux(:x86_64, libc=:glibc) => ("$bin_prefix/CUDA.v10.0.130-0.1.3.x86_64-linux-gnu.tar.gz", "270119829fb6ae8aabbb8c517c9538889865646c177ab80a8c3bf04ff7343f49"),
+            Windows(:x86_64) => ("$bin_prefix/CUDA.v10.0.130-0.1.3.x86_64-w64-mingw32.tar.gz", "ca938e8ec4f31581627dd7a11a92165fd472c2551d79553daf058a10fcb614f2"),
+            MacOS(:x86_64) => ("$bin_prefix/CUDA.v10.0.130-0.1.3.x86_64-apple-darwin14.tar.gz", "d1cb8851484a7635fd51cd0da6c82f79f5a65572b5e6a33c855d2ea98f796282"),
+        ),
+    v"10.1" =>
+        Dict(
+            Linux(:x86_64, libc=:glibc) => ("$bin_prefix/CUDA.v10.1.243-0.1.3.x86_64-linux-gnu.tar.gz", "ba6086c0a3df31d419abba7c18feadf67a832197c29d6e12643187cbf7b92464"),
+            Windows(:x86_64) => ("$bin_prefix/CUDA.v10.1.243-0.1.3.x86_64-w64-mingw32.tar.gz", "532d99ab03d2360718a3b299afef087eaf09243e69033793bd057f3f9682e1b1"),
+            MacOS(:x86_64) => ("$bin_prefix/CUDA.v10.1.243-0.1.3.x86_64-apple-darwin14.tar.gz", "34bea1c4c4b846aa2757cca66a1b8fc37cfe6abcddb0a2995da6788aa792cf79"),
         ),
 )
 
