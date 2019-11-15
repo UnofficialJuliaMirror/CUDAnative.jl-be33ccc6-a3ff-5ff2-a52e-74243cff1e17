@@ -130,6 +130,9 @@ cuarrays:
     - .test
   tags:
     - nvidia
+  image: nvidia/cuda:10.1-devel-ubuntu18.04
+  variables:
+    JULIA_CUDA_USE_BINARYBUILDER: 'false'
   script:
     - export JULIA_DEPOT_PATH="$CI_PROJECT_DIR/.julia/"
     - export CUARRAYS=".julia/dev/CuArrays"
