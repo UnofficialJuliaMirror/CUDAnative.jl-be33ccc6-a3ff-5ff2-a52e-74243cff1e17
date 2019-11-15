@@ -7,7 +7,6 @@ variables: &variables
   JULIA_CUDA_VERBOSE: 'true'
   NVIDIA_VISIBLE_DEVICES: 'all'
   NVIDIA_DRIVER_CAPABILITIES: 'compute,utility'
-  BINARYBUILDER_STORAGE_DIR: 'downloads'
 
 
 # Julia versions
@@ -112,7 +111,8 @@ cuda:none:
     - .julia:1.2
     - .test
   variables:
-    JULIA_CUDA_VERBOSE: 'true'
+    <<: *variables
+    JULIA_CUDA_USE_BINARYBUILDER: 'false'
   script:
     - julia -e 'using InteractiveUtils;
                 versioninfo()'
