@@ -3,7 +3,7 @@ include:
 
 image: ubuntu:bionic
 
-variables: &variables
+variables:
   JULIA_CUDA_VERBOSE: 'true'
   NVIDIA_VISIBLE_DEVICES: 'all'
   NVIDIA_DRIVER_CAPABILITIES: 'compute,utility'
@@ -60,7 +60,6 @@ cuda:10.1:
     - .julia:1.2
     - .test
   variables:
-    <<: *variables
     JULIA_CUDA_VERSION: '10.1'
   tags:
     - nvidia
@@ -70,7 +69,6 @@ cuda:10.0:
     - .julia:1.2
     - .test
   variables:
-    <<: *variables
     JULIA_CUDA_VERSION: '10.0'
   tags:
     - nvidia
@@ -80,7 +78,6 @@ cuda:9.2:
     - .julia:1.2
     - .test
   variables:
-    <<: *variables
     JULIA_CUDA_VERSION: '9.2'
   tags:
     - nvidia
@@ -90,7 +87,6 @@ cuda:9.0:
     - .julia:1.2
     - .test
   variables:
-    <<: *variables
     JULIA_CUDA_VERSION: '9.0'
   tags:
     - nvidia
@@ -101,7 +97,6 @@ cuda:local:
     - .test
   image: nvidia/cuda:10.1-devel-ubuntu18.04
   variables:
-    <<: *variables
     JULIA_CUDA_USE_BINARYBUILDER: 'false'
   tags:
     - nvidia
@@ -111,7 +106,6 @@ cuda:none:
     - .julia:1.2
     - .test
   variables:
-    <<: *variables
     JULIA_CUDA_USE_BINARYBUILDER: 'false'
   script:
     - julia -e 'using InteractiveUtils;
@@ -137,7 +131,8 @@ cuarrays:
   tags:
     - nvidia
   script:
-    - export CUARRAYS="$HOME/.julia/dev/CuArrays"
+    - export JULIA_DEPOT_PATH="$CI_PROJECT_DIR/.julia/"
+    - export CUARRAYS=".julia/dev/CuArrays"
     - julia -e 'using Pkg;
                 Pkg.develop("CuArrays");'
     - julia --project -e 'using Pkg;
